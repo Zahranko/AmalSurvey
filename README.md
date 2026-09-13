@@ -4,6 +4,21 @@ The anonymous page patients use to fill in a questionnaire, served as a single
 self-contained `index.html` — CSS, JavaScript and all. No build step, no
 dependencies. Styled after the public feedback form (`AmalFeedback`).
 
+**It is a phone app shell, like the feedback form.** `<body>` is
+`position:fixed` and never scrolls; the header is pinned at the top, the submit
+button in a bar pinned at the bottom, and only the content between them
+(`#scroller`) scrolls. Zoom is off — `user-scalable=no` for Android, plus a
+script guard against pinch, double-tap, `Ctrl`+wheel and `Ctrl`+`+`/`-`/`0` for
+Safari and desktop. The keyboard doesn't move the layout: `--app-h` ignores it,
+and `--kb-h` pads the scroller so the phone field can be lifted out from behind
+it (the same `syncShell` guard the feedback page uses — see its README). Text
+inputs are 16px so Safari never auto-zooms on focus. On screens under 700px
+tall the intro line is dropped to leave room for the questions.
+
+To check the phone layout on a desktop, load it in an iframe
+(`<iframe src="/radiology" width="390" height="780">`) rather than trusting a
+resized window.
+
 **One page serves every questionnaire.** The first path segment is the
 questionnaire's link, as set in the console (*Questionnaires → New
 questionnaire → Page link*):

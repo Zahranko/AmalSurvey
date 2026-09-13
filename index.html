@@ -2,8 +2,15 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- قشرة تطبيق لا مستند: تملأ الشاشة ولا تقبل التكبير، مثل نموذج الآراء.
+     user-scalable=no يُحترم على أندرويد ويتجاهله Safari، لذا يسنده حارس القرص
+     والنقر المزدوج في السكربت. interactive-widget=resizes-visual يُبقي نافذة
+     التخطيط ثابتة عند فتح لوحة المفاتيح. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual">
 <meta name="theme-color" content="#08517d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="format-detection" content="telephone=no">
 <meta name="robots" content="noindex">
 <title>استبيان رضا المرضى | مستشفى الأمل</title>
@@ -37,28 +44,59 @@
   --radius-lg:24px;
   --radius-md:18px;
   --ease:cubic-bezier(.4,.1,.2,1);
+
+  /* ارتفاع القشرة — ثابت لا يتأثّر بلوحة المفاتيح؛ اللوحة تغطّي أسفل الشاشة
+     ولا يتحرّك ما تحتها. */
+  --app-h:100dvh;
+  /* ارتفاع لوحة المفاتيح، يُضاف أسفل منطقة التمرير حتى يمكن رفع آخر حقل من
+     خلفها. */
+  --kb-h:0px;
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;height:100%}
+/* الجسم مثبّت: لا تمرير للصفحة، ولا ارتداد مطاطي، ولا شريط عنوان يقفز.
+   كل التمرير يحدث داخل ‎.sheet‎ وحدها. */
 body{
   font-family:'Cairo',system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif;
   background:var(--paper);
   color:var(--ink);
   line-height:1.6;
   -webkit-font-smoothing:antialiased;
-  min-height:100dvh;
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  overscroll-behavior:none;
   touch-action:manipulation;
 }
+
+/* ---------- الهيكل ---------- */
+.stage{height:var(--app-h);display:flex;flex-direction:column;overflow:hidden}
+
+.sheet{
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.sheet::-webkit-scrollbar{width:6px}
+.sheet::-webkit-scrollbar-thumb{background:#cfdde7;border-radius:3px}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 /* ---------- الترويسة ---------- */
+/* مثبّتة أعلى القشرة ومضغوطة: ترويسة طويلة على هاتف بارتفاع 640px تأكل نصف
+   المساحة. */
 .head{
+  flex:none;
   position:relative;
   background:linear-gradient(158deg,var(--sky) -10%,var(--navy) 55%,var(--navy-deep) 100%);
   color:#fff;
   text-align:center;
-  padding:calc(20px + env(safe-area-inset-top)) 22px 52px;
+  padding:calc(14px + env(safe-area-inset-top)) 22px 32px;
   overflow:hidden;
 }
 .head .glow{
@@ -67,7 +105,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   top:-80px;left:-50px;pointer-events:none;
 }
 .head-in{position:relative;z-index:2;max-width:620px;margin:0 auto}
-.wm{display:block;line-height:1.15;margin-bottom:14px}
+.wm{display:block;line-height:1.15;margin-bottom:8px}
 .wm .ar{display:block;font-weight:800;font-size:17px;letter-spacing:-.5px}
 .wm .en{display:block;font-size:9.5px;letter-spacing:.16em;color:#bfe4f7;font-weight:500}
 .dept{
@@ -76,16 +114,26 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   padding:2px 12px;border-radius:999px;margin-bottom:8px;
 }
 .dept:empty{display:none}
-.head h1{font-size:23px;font-weight:700;line-height:1.35;text-wrap:balance}
-.head .lede{margin-top:8px;font-size:14px;color:#dcf0fb;text-wrap:pretty}
+.head h1{font-size:21px;font-weight:700;line-height:1.35;text-wrap:balance}
+.head .lede{margin-top:4px;font-size:13px;color:#dcf0fb;text-wrap:pretty;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .head .lede:empty{display:none}
 .arch{
-  position:absolute;bottom:-1px;left:0;right:0;height:28px;
+  position:absolute;bottom:-1px;left:0;right:0;height:22px;
   background:var(--paper);border-radius:50% 50% 0 0/100% 100% 0 0;
+}
+/* على الشاشات القصيرة تُحذف الجملة التعريفية لصالح المحتوى. */
+@media (max-height:700px){
+  .head .lede{display:none}
+  .wm .en{display:none}
+  .head h1{font-size:18px}
 }
 
 /* ---------- المحتوى ---------- */
-.wrap{max-width:620px;margin:-18px auto 0;padding:0 16px calc(120px + env(safe-area-inset-bottom));position:relative;z-index:3}
+.wrap{max-width:620px;margin:0 auto;padding:4px 16px 20px}
+/* بعد كل ما سبق عمداً: المساحة بقدر لوحة المفاتيح ضرورية، بدونها لا يكفي مدى
+   التمرير لرفع حقل الهاتف من خلف اللوحة. */
+.sheet .wrap{padding-bottom:calc(20px + var(--kb-h))}
 
 .progress{
   position:sticky;top:0;z-index:5;
@@ -146,10 +194,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 }
 
 /* ---------- شريط الإرسال ---------- */
+/* شريط مثبّت أسفل القشرة، خارج منطقة التمرير. */
 .actionbar{
-  position:fixed;left:0;right:0;bottom:0;z-index:10;
-  background:linear-gradient(to top,var(--paper) 70%,rgba(247,250,252,0));
-  padding:18px 16px calc(14px + env(safe-area-inset-bottom));
+  flex:none;
+  background:#fff;
+  border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  box-shadow:0 -14px 28px -24px rgba(8,48,71,.7);
 }
 .actionbar .in{max-width:620px;margin:0 auto}
 .submit{
@@ -217,6 +268,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </head>
 <body>
 
+<div class="stage">
+
 <header class="head">
   <span class="glow" aria-hidden="true"></span>
   <div class="head-in">
@@ -231,7 +284,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   <span class="arch" aria-hidden="true"></span>
 </header>
 
-<main class="wrap">
+<main class="sheet" id="scroller">
+<div class="wrap">
 
   <!-- تحميل -->
   <div id="loading" aria-busy="true" aria-label="جارٍ التحميل">
@@ -279,6 +333,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <p>وصلنا تقييمك، وسنعمل على الاستفادة منه في تحسين خدمتنا.<br>نتمنى لك دوام الصحة والعافية.</p>
   </section>
 
+</div>
 </main>
 
 <div class="actionbar" id="actionbar" hidden>
@@ -288,6 +343,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <span id="submitLabel">إرسال التقييم</span>
     </button>
   </div>
+</div>
+
 </div>
 
 <script>
@@ -310,6 +367,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   ];
 
   const $ = (id) => document.getElementById(id);
+  const scroller = $('scroller');
   const els = {
     loading: $('loading'), state: $('stateMsg'), stateIcon: $('stateIcon'), stateTitle: $('stateTitle'),
     stateBody: $('stateBody'), stateRetry: $('stateRetry'), form: $('form'), questions: $('questions'),
@@ -524,7 +582,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
       if (res.ok) {
         show('thanks');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        scroller.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
       if (res.status === 404) return notFound();
@@ -549,6 +607,101 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   });
 
   els.stateRetry.addEventListener('click', load);
+
+  /* =========================================================
+     القشرة: ملء الشاشة ومنع التكبير — منقولة من نموذج الآراء
+     ========================================================= */
+
+  // --app-h ارتفاع القشرة ويتجاهل لوحة المفاتيح: لو تتبّع المنطقة المرئية
+  // لقفزت الترويسة وشريط الإرسال مع كل فتح وإغلاق للوحة. --kb-h الفرق بينهما،
+  // مساحة تمرير إضافية تُخرج حقل الهاتف من خلف اللوحة.
+  const vv = window.visualViewport;
+  const root = document.documentElement;
+  let shellW = window.innerWidth;
+  let shellH = window.innerHeight;
+
+  function syncVisible() {
+    const visible = vv ? vv.height : window.innerHeight;
+    root.style.setProperty('--kb-h', Math.max(0, shellH - visible) + 'px');
+    keepFocusVisible();
+  }
+
+  // يمرّر المحتوى بأقلّ قدر يُخرج الحقل المركَّز عليه من خلف لوحة المفاتيح.
+  // مؤجَّل لأن اللوحة تنزلق على دفعات.
+  let focusTimer = 0;
+  function keepFocusVisible() {
+    clearTimeout(focusTimer);
+    focusTimer = setTimeout(() => {
+      const el = document.activeElement;
+      if (!el || !scroller.contains(el) || !editable(el)) return;
+      const visible = vv ? vv.height : window.innerHeight;
+      const rect = el.getBoundingClientRect();
+      const top = scroller.getBoundingClientRect().top;
+      const margin = 16;
+      if (rect.top < top + margin) {
+        scroller.scrollBy({ top: rect.top - top - margin, behavior: 'smooth' });
+      } else if (rect.bottom + margin > visible) {
+        scroller.scrollBy({ top: rect.bottom + margin - visible, behavior: 'smooth' });
+      }
+    }, 140);
+  }
+
+  const EDITABLE = 'input:not([type=hidden]):not([type=radio]),textarea,select';
+  const editable = (el) => !!(el && el.matches && el.matches(EDITABLE));
+  const typing = () => editable(document.activeElement);
+
+  // اللوحة تنزلق ولا تُغلق لحظة مغادرة الحقل؛ هذه المهلة تغطّي تلك اللحظة.
+  let lastTyped = 0;
+  document.addEventListener('focusin', (e) => { if (editable(e.target)) lastTyped = Date.now(); });
+  document.addEventListener('focusout', (e) => { if (editable(e.target)) lastTyped = Date.now(); });
+  const keyboardLikely = () => typing() || Date.now() - lastTyped < 700;
+
+  function syncShell(force) {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    // متصفّحات تقلّص نافذة التخطيط عند فتح اللوحة — يُتجاهل ذلك ما دام المؤشّر
+    // في حقل، وهو وحده ما يميّز اللوحة عن تصغير نافذة حقيقي.
+    if (!force && w === shellW && h < shellH && keyboardLikely()) return;
+    shellW = w;
+    shellH = h;
+    root.style.setProperty('--app-h', h + 'px');
+  }
+
+  if (vv) {
+    vv.addEventListener('resize', syncVisible);
+    vv.addEventListener('scroll', syncVisible);
+  }
+  window.addEventListener('resize', () => { syncShell(false); syncVisible(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { syncShell(true); syncVisible(); }, 260));
+  document.addEventListener('focusout', () => setTimeout(() => {
+    if (!typing()) { syncShell(true); syncVisible(); }
+  }, 900));
+  syncShell(true);
+  syncVisible();
+
+  // منع التكبير. الـ meta يكفي على أندرويد؛ Safari يتجاهل user-scalable=no،
+  // فتُمنع إيماءات القرص والنقر المزدوج يدوياً.
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((type) => {
+    document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+  });
+  document.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 320) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+  // وعلى الحاسوب: Ctrl+عجلة واختصارات + − 0.
+  document.addEventListener('wheel', (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '_', '0'].includes(e.key)) e.preventDefault();
+  });
+
+  // الصفحة مثبّتة؛ أي محاولة لتمريرها تُردّ.
+  window.addEventListener('scroll', () => window.scrollTo(0, 0));
+  document.addEventListener('focusin', (e) => { if (scroller.contains(e.target)) keepFocusVisible(); });
 
   load();
 })();
