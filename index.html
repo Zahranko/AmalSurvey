@@ -165,6 +165,23 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ---------- بيانات اختيارية ---------- */
+.contact{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius-lg);padding:16px;margin-top:4px}
+.contact h2{font-size:15.5px;font-weight:700}
+.contact .hint{font-size:12.5px;color:var(--ink-soft);margin:2px 0 12px}
+.field{margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.field label small{font-weight:500;color:var(--ink-soft)}
+/* 16px على الأقل: أي حقل أصغر يجعل Safari يكبّر الصفحة عند التركيز. */
+.inp{width:100%;min-height:50px;font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;outline:none;transition:border-color .18s var(--ease),box-shadow .18s var(--ease)}
+.inp:focus{border-color:var(--sky);box-shadow:0 0 0 4px rgba(22,159,217,.14);background:#fff}
+.inp.invalid{border-color:var(--danger)}
+.inp[type=tel]{direction:ltr;text-align:right}
+.inp[type=tel]::placeholder{text-align:right}
+.err{font-size:12.5px;color:var(--danger);font-weight:600;margin-top:4px;min-height:0}
+.err:empty{display:none}
+
 .alert{
   display:none;margin:0 0 12px;padding:11px 14px;border-radius:14px;
   background:#fdeeee;color:#a93333;border:1px solid #f4cccc;font-size:14px;font-weight:600;
@@ -238,6 +255,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <div class="bar"><i id="barFill"></i></div>
     </div>
     <div id="questions"></div>
+
+    <section class="contact" aria-labelledby="contactTitle">
+      <h2 id="contactTitle">بياناتك <small style="font-weight:500;color:var(--ink-soft)">(اختياري)</small></h2>
+      <p class="hint">اتركها إن رغبت بأن نتواصل معك بخصوص تقييمك.</p>
+      <div class="field">
+        <label for="name">الاسم <small>(اختياري)</small></label>
+        <input class="inp" id="name" name="name" type="text" maxlength="100" autocomplete="name" enterkeyhint="next" placeholder="الاسم الكامل">
+      </div>
+      <div class="field">
+        <label for="phone">رقم الهاتف <small>(اختياري)</small></label>
+        <input class="inp" id="phone" name="phone" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" enterkeyhint="done" placeholder="07XXXXXXXX">
+        <p class="err" id="phoneErr"></p>
+      </div>
+    </section>
   </form>
 
   <!-- شكراً -->
@@ -284,6 +315,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     doneCount: $('doneCount'), totalCount: $('totalCount'), barFill: $('barFill'), thanks: $('thanks'),
     actionbar: $('actionbar'), alert: $('alert'), submit: $('submit'), submitLabel: $('submitLabel'),
     title: $('title'), lede: $('lede'), dept: $('dept'),
+    name: $('name'), phone: $('phone'), phoneErr: $('phoneErr'),
   };
 
   // الرابط هو أول جزء من المسار: /radiology. ‎?q=radiology‎ بديل للمعاينة
@@ -417,6 +449,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     if (done === questions.length) setAlert('');
   }
 
+  // اختياري؛ إن كُتب فيجب أن يحوي 7 إلى 15 رقماً. نفس قاعدة الـ API.
+  function phoneValue() {
+    const raw = els.phone.value.trim();
+    if (!raw) return { ok: true, value: null };
+    const digits = raw.replace(/\D/g, '');
+    const ok = /^[0-9+\s\-()]+$/.test(raw) && digits.length >= 7 && digits.length <= 15;
+    return { ok, value: raw };
+  }
+
+  els.phone.addEventListener('input', () => {
+    els.phone.classList.remove('invalid');
+    els.phoneErr.textContent = '';
+  });
+
   function setAlert(message) {
     els.alert.textContent = message;
     els.alert.classList.toggle('show', !!message);
@@ -447,6 +493,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       return;
     }
 
+    const phone = phoneValue();
+    if (!phone.ok) {
+      els.phone.classList.add('invalid');
+      els.phoneErr.textContent = 'رقم الهاتف غير صحيح — اتركه فارغاً أو اكتب رقماً صحيحاً';
+      els.phone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     submitting = true;
     setAlert('');
     els.submit.disabled = true;
@@ -460,7 +514,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       const res = await fetch(`${API_BASE}/api/public/questionnaire/${encodeURIComponent(slug)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ answers: questions.map((q) => ({ questionId: q.id, rating: answerFor(q) })) }),
+        body: JSON.stringify({
+          answers: questions.map((q) => ({ questionId: q.id, rating: answerFor(q) })),
+          name: els.name.value.trim() || null,
+          phoneNumber: phone.value,
+        }),
       });
 
       if (res.ok) {

@@ -42,7 +42,10 @@ Both on `PublicQuestionnaireController`, rate limited 10 requests/minute per IP
 | | |
 |---|---|
 | `GET /api/public/questionnaire/{slug}` | `{ title, slug, description, departmentName, questions: [{ id, text }] }`, 404 if unknown/inactive |
-| `POST /api/public/questionnaire/{slug}` | body `{ answers: [{ questionId, rating }] }` → `{ success, error }` |
+| `POST /api/public/questionnaire/{slug}` | body `{ answers: [{ questionId, rating }], name?, phoneNumber? }` → `{ success, error }` |
+
+Name and phone are optional. A phone, when typed, must hold 7–15 digits — the
+page checks this before submitting, and the API enforces the same rule.
 
 ## Deploying
 
