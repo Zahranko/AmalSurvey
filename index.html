@@ -230,6 +230,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .inp.invalid{border-color:var(--danger)}
 .inp[type=tel]{direction:ltr;text-align:right}
 .inp[type=tel]::placeholder{text-align:right}
+.notes{margin-top:0;margin-bottom:0}
+.notes h2 label{display:inline;font:inherit;margin:0}
+.inp.area{min-height:112px;resize:none;line-height:1.6;display:block}
+.count{font-size:11.5px;color:var(--ink-soft);text-align:left;margin-top:4px}
+.count:empty{display:none}
 .err{font-size:12.5px;color:var(--danger);font-weight:600;margin-top:4px;min-height:0}
 .err:empty{display:none}
 
@@ -324,6 +329,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <div class="bar"><i id="barFill"></i></div>
     </div>
     <div id="questions"></div>
+
+    <!-- الملاحظات دائماً في الأسفل، بعد آخر سؤال. -->
+    <section class="contact notes" aria-labelledby="notesTitle">
+      <h2 id="notesTitle"><label for="notes">ملاحظات <small style="font-weight:500;color:var(--ink-soft)">(اختياري)</small></label></h2>
+      <p class="hint">أي شيء تودّ إضافته عن زيارتك.</p>
+      <textarea class="inp area" id="notes" name="notes" maxlength="2000" rows="4" enterkeyhint="enter" placeholder="اكتب ملاحظاتك هنا…"></textarea>
+      <p class="count" id="notesCount" aria-live="polite"></p>
+    </section>
   </form>
 
   <!-- شكراً -->
@@ -375,6 +388,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     actionbar: $('actionbar'), alert: $('alert'), submit: $('submit'), submitLabel: $('submitLabel'),
     title: $('title'), lede: $('lede'), dept: $('dept'),
     name: $('name'), phone: $('phone'), phoneErr: $('phoneErr'),
+    notes: $('notes'), notesCount: $('notesCount'),
   };
 
   // الرابط هو أول جزء من المسار: /radiology. ‎?q=radiology‎ بديل للمعاينة
@@ -522,6 +536,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     els.phoneErr.textContent = '';
   });
 
+  // عدّاد يظهر فقط قرب الحدّ، حتى لا يشتّت من يكتب سطرين.
+  els.notes.addEventListener('input', () => {
+    const left = 2000 - els.notes.value.length;
+    els.notesCount.textContent = left <= 200 ? `${left} حرفاً متبقياً` : '';
+  });
+
   function setAlert(message) {
     els.alert.textContent = message;
     els.alert.classList.toggle('show', !!message);
@@ -577,6 +597,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
           answers: questions.map((q) => ({ questionId: q.id, rating: answerFor(q) })),
           name: els.name.value.trim() || null,
           phoneNumber: phone.value,
+          notes: els.notes.value.trim() || null,
         }),
       });
 
