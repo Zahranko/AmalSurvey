@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#08517d">
+<meta name="format-detection" content="telephone=no">
+<meta name="robots" content="noindex">
+<title>استبيان رضا المرضى | مستشفى الأمل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   مستشفى الأمل — استبيانات المرضى
+   صفحة واحدة لكل الاستبيانات: الجزء الأول من المسار هو رابط الاستبيان
+   (/radiology)، وتُحمَّل أسئلته من الـ API.
+   ========================================================= */
+:root{
+  --navy:#08517d;
+  --navy-deep:#063a5b;
+  --sky:#169fd9;
+  --sky-soft:#e7f4fb;
+  --paper:#f7fafc;
+  --ink:#123047;
+  --ink-soft:#6a8398;
+  --line:#e3ecf2;
+  --danger:#d64545;
+
+  /* المقياس الخماسي، من الأفضل إلى الأسوأ */
+  --r5:#159f8a;
+  --r4:#5fb86a;
+  --r3:#e9b43c;
+  --r2:#e98a4a;
+  --r1:#d64545;
+
+  --radius-lg:24px;
+  --radius-md:18px;
+  --ease:cubic-bezier(.4,.1,.2,1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  font-family:'Cairo',system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  min-height:100dvh;
+  touch-action:manipulation;
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+/* ---------- الترويسة ---------- */
+.head{
+  position:relative;
+  background:linear-gradient(158deg,var(--sky) -10%,var(--navy) 55%,var(--navy-deep) 100%);
+  color:#fff;
+  text-align:center;
+  padding:calc(20px + env(safe-area-inset-top)) 22px 52px;
+  overflow:hidden;
+}
+.head .glow{
+  position:absolute;width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);
+  top:-80px;left:-50px;pointer-events:none;
+}
+.head-in{position:relative;z-index:2;max-width:620px;margin:0 auto}
+.wm{display:block;line-height:1.15;margin-bottom:14px}
+.wm .ar{display:block;font-weight:800;font-size:17px;letter-spacing:-.5px}
+.wm .en{display:block;font-size:9.5px;letter-spacing:.16em;color:#bfe4f7;font-weight:500}
+.dept{
+  display:inline-block;font-size:12px;font-weight:600;color:#dff2fc;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+  padding:2px 12px;border-radius:999px;margin-bottom:8px;
+}
+.dept:empty{display:none}
+.head h1{font-size:23px;font-weight:700;line-height:1.35;text-wrap:balance}
+.head .lede{margin-top:8px;font-size:14px;color:#dcf0fb;text-wrap:pretty}
+.head .lede:empty{display:none}
+.arch{
+  position:absolute;bottom:-1px;left:0;right:0;height:28px;
+  background:var(--paper);border-radius:50% 50% 0 0/100% 100% 0 0;
+}
+
+/* ---------- المحتوى ---------- */
+.wrap{max-width:620px;margin:-18px auto 0;padding:0 16px calc(120px + env(safe-area-inset-bottom));position:relative;z-index:3}
+
+.progress{
+  position:sticky;top:0;z-index:5;
+  background:color-mix(in srgb,var(--paper) 92%,transparent);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  padding:10px 2px 12px;margin-bottom:6px;
+}
+.progress .row{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px}
+.progress .row b{color:var(--navy);font-weight:700}
+.bar{height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--sky),var(--navy));border-radius:inherit;transition:width .35s var(--ease)}
+
+.q{
+  background:#fff;border:1.5px solid var(--line);border-radius:var(--radius-lg);
+  padding:18px 16px 16px;margin-bottom:12px;
+  transition:border-color .2s var(--ease),box-shadow .2s var(--ease);
+  scroll-margin-top:72px;
+}
+.q.done{border-color:#d4e6f1}
+.q.missing{border-color:var(--danger);box-shadow:0 0 0 4px rgba(214,69,69,.12)}
+.q-title{display:flex;gap:10px;align-items:flex-start;margin-bottom:14px}
+.q-num{
+  flex:none;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+  background:var(--sky-soft);color:var(--navy);font-weight:700;font-size:13px;margin-top:1px;
+}
+.q.done .q-num{background:var(--navy);color:#fff}
+.q-text{font-size:16px;font-weight:600;line-height:1.5}
+
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.opt{position:relative}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt label{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  min-height:78px;padding:8px 2px;border-radius:14px;
+  border:1.5px solid var(--line);background:var(--paper);
+  cursor:pointer;-webkit-user-select:none;user-select:none;text-align:center;
+  transition:transform .12s var(--ease),border-color .18s var(--ease),background .18s var(--ease);
+}
+.opt .face{font-size:28px;line-height:1;filter:grayscale(.35);transition:transform .18s var(--ease),filter .18s var(--ease)}
+.opt .lbl{font-size:12px;font-weight:600;color:var(--ink-soft);line-height:1.25}
+.opt label:active{transform:scale(.96)}
+@media (hover:hover) and (pointer:fine){
+  .opt label:hover{border-color:#bcd6e6}
+  .opt label:hover .face{filter:none}
+}
+.opt input:focus-visible + label{outline:2px solid var(--sky);outline-offset:2px}
+.opt input:checked + label{border-color:var(--c);background:color-mix(in srgb,var(--c) 12%,#fff)}
+.opt input:checked + label .face{filter:none;transform:scale(1.15)}
+.opt input:checked + label .lbl{color:var(--c)}
+/* بعد اختيار إجابة، تخفت البقية قليلاً */
+.scale:has(input:checked) .opt input:not(:checked) + label{opacity:.62}
+.opt.r5{--c:var(--r5)} .opt.r4{--c:var(--r4)} .opt.r3{--c:#c48a12} .opt.r2{--c:var(--r2)} .opt.r1{--c:var(--r1)}
+
+@media (max-width:360px){
+  .opt label{min-height:70px}
+  .opt .face{font-size:24px}
+  .opt .lbl{font-size:10.5px}
+}
+
+/* ---------- شريط الإرسال ---------- */
+.actionbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:10;
+  background:linear-gradient(to top,var(--paper) 70%,rgba(247,250,252,0));
+  padding:18px 16px calc(14px + env(safe-area-inset-bottom));
+}
+.actionbar .in{max-width:620px;margin:0 auto}
+.submit{
+  width:100%;min-height:54px;border-radius:var(--radius-md);
+  background:linear-gradient(135deg,var(--sky),var(--navy));
+  color:#fff;font-size:17px;font-weight:700;
+  box-shadow:0 10px 24px -10px rgba(8,81,125,.55);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:transform .12s var(--ease),opacity .2s var(--ease);
+}
+.submit:active{transform:scale(.985)}
+.submit[disabled]{opacity:.7;cursor:progress}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.alert{
+  display:none;margin:0 0 12px;padding:11px 14px;border-radius:14px;
+  background:#fdeeee;color:#a93333;border:1px solid #f4cccc;font-size:14px;font-weight:600;
+}
+.alert.show{display:block}
+
+/* ---------- حالات الصفحة ---------- */
+.state{
+  background:#fff;border:1.5px solid var(--line);border-radius:var(--radius-lg);
+  padding:34px 22px;text-align:center;
+}
+.state .ic{font-size:46px;line-height:1;margin-bottom:12px}
+.state h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.state p{color:var(--ink-soft);font-size:14.5px}
+.state .btn{
+  margin-top:18px;display:inline-flex;align-items:center;justify-content:center;
+  min-height:46px;padding:0 22px;border-radius:14px;background:var(--navy);color:#fff;font-weight:700;
+}
+.state.ok .ic{animation:pop .5s var(--ease)}
+@keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+
+.skel{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius-lg);padding:18px 16px;margin-bottom:12px}
+.skel i{display:block;height:14px;border-radius:7px;background:linear-gradient(90deg,#eef4f8 25%,#e2ebf1 50%,#eef4f8 75%);background-size:200% 100%;animation:shimmer 1.2s infinite}
+.skel i + i{margin-top:14px;height:70px;border-radius:14px}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+[hidden]{display:none!important}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <span class="glow" aria-hidden="true"></span>
+  <div class="head-in">
+    <span class="wm">
+      <span class="ar">مستشفى الأمل</span>
+      <span class="en">AL AMAL HOSPITAL</span>
+    </span>
+    <span class="dept" id="dept"></span>
+    <h1 id="title">استبيان رضا المرضى</h1>
+    <p class="lede" id="lede">رأيك يساعدنا على تحسين خدمتنا — لن يستغرق أكثر من دقيقة.</p>
+  </div>
+  <span class="arch" aria-hidden="true"></span>
+</header>
+
+<main class="wrap">
+
+  <!-- تحميل -->
+  <div id="loading" aria-busy="true" aria-label="جارٍ التحميل">
+    <div class="skel"><i style="width:70%"></i><i></i></div>
+    <div class="skel"><i style="width:55%"></i><i></i></div>
+    <div class="skel"><i style="width:62%"></i><i></i></div>
+  </div>
+
+  <!-- غير موجود / خطأ -->
+  <section class="state" id="stateMsg" hidden role="alert">
+    <div class="ic" id="stateIcon" aria-hidden="true">🔍</div>
+    <h2 id="stateTitle"></h2>
+    <p id="stateBody"></p>
+    <button type="button" class="btn" id="stateRetry" hidden>إعادة المحاولة</button>
+  </section>
+
+  <!-- الاستبيان -->
+  <form id="form" hidden novalidate>
+    <div class="progress" aria-live="polite">
+      <div class="row"><span>تقدّمك</span><span><b id="doneCount">0</b> من <b id="totalCount">0</b></span></div>
+      <div class="bar"><i id="barFill"></i></div>
+    </div>
+    <div id="questions"></div>
+  </form>
+
+  <!-- شكراً -->
+  <section class="state ok" id="thanks" hidden>
+    <div class="ic" aria-hidden="true">💙</div>
+    <h2>شكراً لك!</h2>
+    <p>وصلنا تقييمك، وسنعمل على الاستفادة منه في تحسين خدمتنا.<br>نتمنى لك دوام الصحة والعافية.</p>
+  </section>
+
+</main>
+
+<div class="actionbar" id="actionbar" hidden>
+  <div class="in">
+    <p class="alert" id="alert" role="alert"></p>
+    <button type="submit" form="form" class="submit" id="submit">
+      <span id="submitLabel">إرسال التقييم</span>
+    </button>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // أصل الـ API. ثابت هنا عمداً: صفحة ثابتة لا خادم لها يقرأ متغيّرات بيئة،
+  // والقيمة عامة أصلاً لأنها تُستخدم في متصفح المريض.
+  // ‎?api=http://localhost:5106‎ يغيّره للمعاينة، على localhost فقط.
+  const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
+  const API_BASE = (LOCAL && new URLSearchParams(location.search).get('api')) || 'https://alamalhosp-001-site6.itempurl.com';
+
+  // المقياس الخماسي — القيم هي أسماء QuestionRating في الـ API.
+  const RATINGS = [
+    { value: 'VeryGood', label: 'جيد جداً', face: '😄', cls: 'r5' },
+    { value: 'Good',     label: 'جيد',      face: '🙂', cls: 'r4' },
+    { value: 'Mid',      label: 'متوسط',    face: '😐', cls: 'r3' },
+    { value: 'Bad',      label: 'سيئ',      face: '🙁', cls: 'r2' },
+    { value: 'VeryBad',  label: 'سيئ جداً', face: '😞', cls: 'r1' },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    loading: $('loading'), state: $('stateMsg'), stateIcon: $('stateIcon'), stateTitle: $('stateTitle'),
+    stateBody: $('stateBody'), stateRetry: $('stateRetry'), form: $('form'), questions: $('questions'),
+    doneCount: $('doneCount'), totalCount: $('totalCount'), barFill: $('barFill'), thanks: $('thanks'),
+    actionbar: $('actionbar'), alert: $('alert'), submit: $('submit'), submitLabel: $('submitLabel'),
+    title: $('title'), lede: $('lede'), dept: $('dept'),
+  };
+
+  // الرابط هو أول جزء من المسار: /radiology. ‎?q=radiology‎ بديل للمعاينة
+  // المحلية حيث لا توجد قاعدة إعادة توجيه.
+  function readSlug() {
+    const fromQuery = new URLSearchParams(location.search).get('q');
+    const fromPath = location.pathname.split('/').filter(Boolean)[0] || '';
+    const raw = decodeURIComponent(fromQuery || (fromPath === 'index.html' ? '' : fromPath)).trim().toLowerCase();
+    return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(raw) ? raw : '';
+  }
+
+  const slug = readSlug();
+  let questions = [];
+  let submitting = false;
+
+  function show(which) {
+    els.loading.hidden = which !== 'loading';
+    els.state.hidden = which !== 'state';
+    els.form.hidden = which !== 'form';
+    els.actionbar.hidden = which !== 'form';
+    els.thanks.hidden = which !== 'thanks';
+  }
+
+  function showState(icon, title, body, retry) {
+    els.stateIcon.textContent = icon;
+    els.stateTitle.textContent = title;
+    els.stateBody.textContent = body;
+    els.stateRetry.hidden = !retry;
+    show('state');
+  }
+
+  function notFound() {
+    document.title = 'الاستبيان غير متاح | مستشفى الأمل';
+    showState('🔍', 'هذا الاستبيان غير متاح', 'ربما انتهى الاستبيان أو أن الرابط غير صحيح. تأكد من الرابط أو اسأل موظف الاستقبال.', false);
+  }
+
+  async function load() {
+    if (!slug) return notFound();
+    show('loading');
+    try {
+      const res = await fetch(`${API_BASE}/api/public/questionnaire/${encodeURIComponent(slug)}`, { headers: { Accept: 'application/json' } });
+      if (res.status === 404) return notFound();
+      if (res.status === 429) {
+        return showState('⏳', 'طلبات كثيرة', 'يرجى الانتظار دقيقة ثم إعادة المحاولة.', true);
+      }
+      if (!res.ok) throw new Error(String(res.status));
+      render(await res.json());
+    } catch {
+      showState('📶', 'تعذّر تحميل الاستبيان', 'تحقّق من اتصالك بالإنترنت ثم أعد المحاولة.', true);
+    }
+  }
+
+  function render(data) {
+    questions = data.questions || [];
+    if (questions.length === 0) return notFound();
+
+    els.title.textContent = data.title;
+    document.title = `${data.title} | مستشفى الأمل`;
+    if (data.description) els.lede.textContent = data.description;
+    els.dept.textContent = data.departmentName || '';
+
+    const frag = document.createDocumentFragment();
+    questions.forEach((q, i) => {
+      const card = document.createElement('div');
+      card.className = 'q';
+      card.id = `q-${q.id}`;
+      card.setAttribute('role', 'radiogroup');
+      card.setAttribute('aria-labelledby', `qt-${q.id}`);
+
+      const legend = document.createElement('div');
+      legend.className = 'q-title';
+      const num = document.createElement('span');
+      num.className = 'q-num';
+      num.textContent = String(i + 1);
+      const text = document.createElement('span');
+      text.className = 'q-text';
+      text.id = `qt-${q.id}`;
+      text.textContent = q.text; // نص فقط — لا HTML من الـ API
+      legend.append(num, text);
+
+      const scale = document.createElement('div');
+      scale.className = 'scale';
+      RATINGS.forEach((r) => {
+        const wrap = document.createElement('div');
+        wrap.className = `opt ${r.cls}`;
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = `q${q.id}`;
+        input.value = r.value;
+        input.id = `q${q.id}-${r.value}`;
+        const label = document.createElement('label');
+        label.htmlFor = input.id;
+        const face = document.createElement('span');
+        face.className = 'face';
+        face.setAttribute('aria-hidden', 'true');
+        face.textContent = r.face;
+        const lbl = document.createElement('span');
+        lbl.className = 'lbl';
+        lbl.textContent = r.label;
+        label.append(face, lbl);
+        wrap.append(input, label);
+        scale.append(wrap);
+      });
+
+      card.append(legend, scale);
+      frag.append(card);
+    });
+
+    els.questions.replaceChildren(frag);
+    els.totalCount.textContent = String(questions.length);
+    updateProgress();
+    show('form');
+  }
+
+  function answerFor(q) {
+    const checked = els.form.querySelector(`input[name="q${q.id}"]:checked`);
+    return checked ? checked.value : null;
+  }
+
+  function updateProgress() {
+    let done = 0;
+    for (const q of questions) {
+      const has = !!answerFor(q);
+      if (has) done++;
+      const card = $(`q-${q.id}`);
+      card.classList.toggle('done', has);
+      if (has) card.classList.remove('missing');
+    }
+    els.doneCount.textContent = String(done);
+    els.barFill.style.width = `${(done / questions.length) * 100}%`;
+    if (done === questions.length) setAlert('');
+  }
+
+  function setAlert(message) {
+    els.alert.textContent = message;
+    els.alert.classList.toggle('show', !!message);
+  }
+
+  // بعد الإجابة ينتقل بلطف إلى السؤال التالي الذي لم يُجب عنه بعد.
+  els.form.addEventListener('change', (e) => {
+    const input = e.target;
+    if (!(input instanceof HTMLInputElement) || input.type !== 'radio') return;
+    const wasAnswered = input.closest('.q').classList.contains('done');
+    updateProgress();
+    if (wasAnswered) return;
+    const next = questions.find((q) => !answerFor(q));
+    if (next) {
+      setTimeout(() => $(`q-${next.id}`).scrollIntoView({ behavior: 'smooth', block: 'center' }), 220);
+    }
+  });
+
+  els.form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+
+    const missing = questions.filter((q) => !answerFor(q));
+    if (missing.length) {
+      missing.forEach((q) => $(`q-${q.id}`).classList.add('missing'));
+      setAlert(missing.length === 1 ? 'بقي سؤال واحد دون إجابة' : `بقي ${missing.length} أسئلة دون إجابة`);
+      $(`q-${missing[0].id}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    submitting = true;
+    setAlert('');
+    els.submit.disabled = true;
+    els.submitLabel.textContent = 'جارٍ الإرسال…';
+    const spinner = document.createElement('span');
+    spinner.className = 'spin';
+    spinner.setAttribute('aria-hidden', 'true');
+    els.submit.prepend(spinner);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/public/questionnaire/${encodeURIComponent(slug)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ answers: questions.map((q) => ({ questionId: q.id, rating: answerFor(q) })) }),
+      });
+
+      if (res.ok) {
+        show('thanks');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (res.status === 404) return notFound();
+
+      let message = 'تعذّر إرسال التقييم. حاول مرة أخرى.';
+      if (res.status === 429) message = 'طلبات كثيرة — يرجى الانتظار دقيقة ثم المحاولة.';
+      else {
+        try {
+          const body = await res.json();
+          if (body && typeof body.error === 'string') message = body.error;
+        } catch { /* ليست JSON — تبقى الرسالة العامة */ }
+      }
+      setAlert(message);
+    } catch {
+      setAlert('تعذّر الاتصال. تحقّق من الإنترنت وحاول مرة أخرى.');
+    } finally {
+      submitting = false;
+      els.submit.disabled = false;
+      els.submitLabel.textContent = 'إرسال التقييم';
+      spinner.remove();
+    }
+  });
+
+  els.stateRetry.addEventListener('click', load);
+
+  load();
+})();
+</script>
+</body>
+</html>

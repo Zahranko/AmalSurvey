@@ -1,0 +1,27 @@
+# Hostinger clones this repo straight into the subdomain's document root, so
+# every file in the repo is reachable over HTTP. Block the developer ones.
+
+DirectoryIndex index.html
+
+<FilesMatch "^(README\.md|\.gitignore|\.htaccess)$">
+  Require all denied
+</FilesMatch>
+
+RedirectMatch 404 /\.git
+
+# Every questionnaire is the same page: /radiology, /emergency, ... all serve
+# index.html, which reads the slug from the path and loads that questionnaire
+# from the API. Real files (index.html itself) are served as they are.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Never stale: a cached copy could post to an old API origin.
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
