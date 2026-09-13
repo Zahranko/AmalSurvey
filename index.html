@@ -166,7 +166,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ---------- بيانات اختيارية ---------- */
-.contact{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius-lg);padding:16px;margin-top:4px}
+.contact{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius-lg);padding:16px;margin-bottom:6px}
 .contact h2{font-size:15.5px;font-weight:700}
 .contact .hint{font-size:12.5px;color:var(--ink-soft);margin:2px 0 12px}
 .field{margin-bottom:12px}
@@ -250,12 +250,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
   <!-- الاستبيان -->
   <form id="form" hidden novalidate>
-    <div class="progress" aria-live="polite">
-      <div class="row"><span>تقدّمك</span><span><b id="doneCount">0</b> من <b id="totalCount">0</b></span></div>
-      <div class="bar"><i id="barFill"></i></div>
-    </div>
-    <div id="questions"></div>
-
+    <!-- البيانات الاختيارية أولاً دائماً، قبل الأسئلة. -->
     <section class="contact" aria-labelledby="contactTitle">
       <h2 id="contactTitle">بياناتك <small style="font-weight:500;color:var(--ink-soft)">(اختياري)</small></h2>
       <p class="hint">اتركها إن رغبت بأن نتواصل معك بخصوص تقييمك.</p>
@@ -269,6 +264,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
         <p class="err" id="phoneErr"></p>
       </div>
     </section>
+
+    <div class="progress" aria-live="polite">
+      <div class="row"><span>تقدّمك</span><span><b id="doneCount">0</b> من <b id="totalCount">0</b></span></div>
+      <div class="bar"><i id="barFill"></i></div>
+    </div>
+    <div id="questions"></div>
   </form>
 
   <!-- شكراً -->
